@@ -31,14 +31,13 @@
   showstringspaces=false,
   xleftmargin=2mm,
   xrightmargin=2mm,
-  framexleftmargin=2mm,
-  framexrightmargin=2mm,
-  framesep=4pt,
-  aboveskip=10pt,
-  belowskip=10pt,
-  captionpos=b,
-  abovecaptionskip=6pt,
-  belowcaptionskip=6pt
+  framexleftmargin=5pt,
+  framexrightmargin=5pt,
+  framextopmargin=4pt,
+  framexbottommargin=4pt,
+  framesep=6pt,
+  aboveskip=9pt,
+  belowskip=11pt
 }
 
 \begin{document}
@@ -93,31 +92,31 @@ The architecture has three layers: client, gateway, and application host. The cl
 
 \begin{figure*}[t]
 \centering
+\resizebox{0.96\textwidth}{!}{%
 \begin{tikzpicture}[
   font=\scriptsize,
-  box/.style={draw, rounded corners, align=center, minimum height=0.85cm, minimum width=2.65cm},
-  widebox/.style={draw, rounded corners, align=center, minimum height=0.9cm, minimum width=3.15cm},
-  layer/.style={draw, dashed, rounded corners, inner sep=9pt},
+  box/.style={draw, rounded corners, align=center, minimum height=0.9cm, text width=2.55cm, inner sep=5pt},
+  widebox/.style={draw, rounded corners, align=center, minimum height=0.95cm, text width=3.05cm, inner sep=5pt},
+  layer/.style={draw, dashed, rounded corners, inner sep=10pt},
   arrow/.style={-{Latex[length=2mm]}, thick}
 ]
-\node[box] (user) at (0,0) {User Device\\Web Browser\\No Local Install};
+\node[box] (user) at (0,0.8) {User Device\\Web Browser\\No Local Install};
+\node[widebox] (guac) at (4.0,0.8) {Apache Guacamole\\Web Gateway\\Port 8080};
+\node[box] (guacd) at (4.0,-0.95) {\texttt{guacd}\\Protocol Daemon\\RDP Translator};
+\node[box] (db) at (4.0,-2.65) {MariaDB/MySQL\\Users + Config};
+\node[widebox] (win) at (8.8,-0.95) {Windows EC2\\GAE Installed\\RDP Endpoint};
+\node[widebox] (gae) at (12.8,-0.95) {GAE Application\\TutorialGenerator\\PlayerAnimasi};
 
-\node[widebox] (guac) at (4.0,1.0) {Apache Guacamole\\Web Gateway\\Port 8080};
-\node[box] (guacd) at (4.0,-0.35) {\texttt{guacd}\\Protocol Daemon};
-\node[box] (db) at (4.0,-1.7) {MariaDB/MySQL\\Users + Config};
-
-\node[widebox] (win) at (8.5,0.35) {Windows EC2\\GAE Installed\\RDP 3389};
-\node[widebox] (gae) at (12.3,0.35) {GAE Application\\TutorialGenerator\\PlayerAnimasi};
-
-\draw[arrow] (user.east) -- node[above]{HTTP/HTML5} (guac.west);
+\draw[arrow] (user.east) -- node[above, pos=0.42]{HTTP/HTML5} (guac.west);
 \draw[arrow] (guac.south) -- (guacd.north);
 \draw[arrow] (guacd.south) -- node[right, xshift=1mm]{config} (db.north);
-\draw[arrow] (guacd.east) -- node[above]{RDP} (win.west);
+\draw[arrow] (guacd.east) -- node[above]{RDP 3389} (win.west);
 \draw[arrow] (win.east) -- (gae.west);
 
-\node[layer, fit=(guac)(guacd)(db), label=above:{Gateway Layer --- Linux EC2}] {};
-\node[layer, fit=(win)(gae), label=above:{Application Layer --- Windows EC2}] {};
-\end{tikzpicture}
+\node[layer, fit=(guac)(guacd)(db), label={[yshift=2pt]above:{Gateway Layer --- Linux EC2}}] {};
+\node[layer, fit=(win)(gae), label={[yshift=2pt]above:{Application Layer --- Windows EC2}}] {};
+\end{tikzpicture}%
+}
 \caption{Cloud rehosting architecture for browser-based access to GAE.}
 \label{fig:architecture}
 \end{figure*}
@@ -296,17 +295,17 @@ Table~\ref{tab:weekly} summarizes the weekly progress based on the project plan 
 \centering
 \caption{Weekly Progress Summary}
 \label{tab:weekly}
-\begin{tabularx}{\textwidth}{p{0.8cm}p{3.2cm}X p{2.0cm}}
+\begin{tabularx}{\textwidth}{p{0.8cm}p{3.5cm}X}
 \toprule
-\textbf{Week} & \textbf{Main Activity} & \textbf{Output} & \textbf{Status} \\
+\textbf{Week} & \textbf{Main Activity} & \textbf{Output} \\
 \midrule
-1 & Problem identification and application analysis & Identified GAE as a Windows-native desktop application with accessibility limitations and local installation dependency. & Completed \\
-2 & Migration strategy selection & Selected rehosting/lift-and-shift as the most suitable approach for preserving the original application while improving access. & Completed \\
-3 & Initial cloud architecture design & Designed an architecture using a browser gateway layer and a Windows application host. & Completed \\
-4 & Local proof of concept & Created a local VM using VirtualBox, installed the application, and accessed it through RDP. Guacamole integration was still in progress. & 40\% progress \\
-5 & AWS setup and EC2 provisioning & Prepared AWS budget, VPC, Linux EC2, and Windows EC2 instances for cloud implementation. & Completed \\
-6 & Guacamole deployment and integration & Deployed Apache Guacamole, \texttt{guacd}, and database services on Linux EC2 and connected them to Windows EC2. & Completed \\
-7 & Final testing, documentation, and demonstration & Verified browser-based access to GAE through Guacamole and prepared final report, appendix, and video demonstrations. & 100\% progress \\
+1 & Problem identification and application analysis & Identified GAE as a Windows-native desktop application with accessibility limitations and local installation dependency. \\
+2 & Migration strategy selection & Selected rehosting/lift-and-shift as the most suitable approach for preserving the original application while improving access. \\
+3 & Initial cloud architecture design & Designed an architecture using a browser gateway layer and a Windows application host. \\
+4 & Local proof of concept & Created a local VM using VirtualBox, installed the application, and accessed it through RDP. Guacamole integration was still in progress, and progress was reported as 40\%. \\
+5 & AWS setup and EC2 provisioning & Prepared AWS budget, VPC, Linux EC2, and Windows EC2 instances for cloud implementation. \\
+6 & Guacamole deployment and integration & Deployed Apache Guacamole, \texttt{guacd}, and database services on Linux EC2 and connected them to Windows EC2. \\
+7 & Final testing, documentation, and demonstration & Verified browser-based access to GAE through Guacamole and prepared final report, appendix, and video demonstrations. Final progress was reported as 100\%. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -331,7 +330,7 @@ Install Docker and Docker Compose on the Linux EC2 instance. The exact command s
 
 Clone the deployment repository and start the Docker Compose services. The repository contains the configuration for Guacamole, \texttt{guacd}, database, and supporting folders.
 
-\begin{lstlisting}[style=code,caption={Deploying the Guacamole gateway}]
+\begin{lstlisting}[style=code]
 git clone https://github.com/EarlyOcean/cloud-computing-final-project.git
 cd cloud-computing-final-project
 mkdir -p init data drive record
@@ -348,7 +347,7 @@ Launch a Windows Server EC2 instance. Configure its security group so that RDP p
 
 Download the original Gamatutor/GAE application artifact from the official repository. Install or copy the required files to the Windows EC2 instance. Verify that TutorialGenerator and PlayerAnimasi can be executed in the Windows environment.
 
-\begin{lstlisting}[style=code,caption={Original application repository}]
+\begin{lstlisting}[style=code]
 https://github.com/gamatutor/gamatutor
 \end{lstlisting}
 
