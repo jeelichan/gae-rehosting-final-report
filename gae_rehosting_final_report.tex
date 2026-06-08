@@ -96,33 +96,29 @@ Arsitektur sistem ditempatkan di dalam AWS VPC. Secara umum, arsitektur terdiri 
 
 \begin{figure*}[t]
 \centering
-\resizebox{0.96\textwidth}{!}{%
+\resizebox{0.82\textwidth}{!}{%
 \begin{tikzpicture}[
   font=\scriptsize,
-  box/.style={draw, rounded corners, align=center, minimum height=1.1cm, text width=2.45cm, inner sep=5pt},
-  note/.style={draw, rounded corners, align=left, text width=5.7cm, inner sep=5pt},
+  box/.style={draw, rounded corners, align=center, minimum height=1.05cm, text width=2.35cm, inner sep=5pt},
   arrow/.style={-{Latex[length=2mm]}, thick}
 ]
-\node[box] (client) at (0,0) {\textbf{Klien}\\Web browser\\tanpa instalasi lokal};
-\node[box] (guac) at (3.6,0) {\textbf{Apache Guacamole}\\Linux EC2\\HTTP :8080};
-\node[box] (guacd) at (7.2,0) {\textbf{\texttt{guacd}}\\RDP bridge\\Docker service};
-\node[box] (win) at (10.8,0) {\textbf{Windows EC2}\\Private IP\\RDP 3389};
-\node[box] (gae) at (14.4,0) {\textbf{GAE}\\TutorialGenerator\\PlayerAnimasi};
+\node[box] (client) at (0,0) {\textbf{Klien}\\Web Browser};
+\node[box] (guac) at (3.2,0) {\textbf{Guacamole}\\Linux EC2\\HTTP :8080};
+\node[box] (guacd) at (6.4,0) {\textbf{\texttt{guacd}}\\RDP Bridge};
+\node[box] (win) at (9.6,0) {\textbf{Windows EC2}\\Private IP\\RDP 3389};
+\node[box] (gae) at (12.8,0) {\textbf{GAE}\\TutorialGenerator\\PlayerAnimasi};
 
 \draw[arrow] (client.east) -- node[above, fill=white, inner sep=1pt]{HTTP/HTML5} (guac.west);
 \draw[arrow] (guac.east) -- node[above, fill=white, inner sep=1pt]{internal} (guacd.west);
 \draw[arrow] (guacd.east) -- node[above, fill=white, inner sep=1pt]{RDP 3389} (win.west);
 \draw[arrow] (win.east) -- (gae.west);
-
-\node[note] at (3.6,-1.75) {\textbf{Gateway service:} Docker pada Linux EC2 menjalankan Guacamole, \texttt{guacd}, dan MySQL/MariaDB untuk autentikasi serta konfigurasi koneksi.};
-\node[note] at (10.8,-1.75) {\textbf{Network rule:} Windows EC2 tidak dibuka langsung ke internet publik dan hanya menerima RDP melalui jalur internal VPC.};
 \end{tikzpicture}%
 }
 \caption{Arsitektur rehosting cloud untuk akses GAE berbasis browser.}
 \label{fig:architecture}
 \end{figure*}
 
-Gambar~\ref{fig:architecture} menunjukkan alur akses akhir dalam bentuk yang diringkas agar tetap terbaca pada format IEEE. Pengguna mengakses Apache Guacamole dari browser melalui endpoint publik pada Linux EC2. Pada instans Linux tersebut, Guacamole, \texttt{guacd}, dan MySQL/MariaDB berjalan sebagai bagian dari deployment berbasis Docker. Guacamole menggunakan database untuk menyimpan akun pengguna dan konfigurasi koneksi, sedangkan \texttt{guacd} menerjemahkan sesi browser menjadi koneksi RDP. Instans Windows EC2 tetap berada pada lapisan target, menggunakan alamat privat, dan diakses melalui port RDP 3389 dari jalur internal VPC, bukan langsung dari internet publik. Dengan demikian, detail VPC, Docker Engine, akses publik Guacamole, database autentikasi, dan target Windows privat tetap tercakup tanpa membuat diagram terlalu padat.
+Gambar~\ref{fig:architecture} menunjukkan alur akses akhir dalam bentuk ringkas agar tetap terbaca pada format IEEE. Pengguna mengakses Apache Guacamole dari browser melalui endpoint publik pada Linux EC2. Pada instans Linux tersebut, Guacamole, \texttt{guacd}, dan MySQL/MariaDB berjalan sebagai bagian dari deployment berbasis Docker. Guacamole menggunakan database untuk menyimpan akun pengguna dan konfigurasi koneksi, sedangkan \texttt{guacd} menerjemahkan sesi browser menjadi koneksi RDP. Instans Windows EC2 tetap berada pada lapisan target, menggunakan alamat privat, dan diakses melalui port RDP 3389 dari jalur internal VPC, bukan langsung dari internet publik. Detail seperti VPC, Docker Engine, database autentikasi, dan aturan jaringan dijelaskan pada Tabel~\ref{tab:components} dan bagian dokumentasi deployment agar diagram utama tidak terlalu padat.
 
 \subsection{Komponen Infrastruktur}
 
@@ -314,23 +310,56 @@ Tabel~\ref{tab:weekly} merangkum progress mingguan berdasarkan rencana proyek da
 
 \section{Dokumentasi Langkah-Langkah Deployment}
 
-Lampiran ini menjelaskan prosedur rehosting yang digunakan dalam proyek. Nilai yang spesifik pada deployment, seperti instance identifier dan alamat IP, perlu disesuaikan dengan lingkungan aktif.
+Lampiran ini menjelaskan prosedur teknis rehosting yang digunakan dalam proyek. Nilai seperti alamat IP, nama key pair, username, dan password tidak dicantumkan secara eksplisit karena bersifat spesifik terhadap lingkungan deployment. Langkah-langkah berikut ditulis agar prosesnya dapat direplikasi dengan mengganti nilai placeholder sesuai konfigurasi masing-masing.
 
-\subsection{Menyiapkan AWS Budget dan Jaringan}
+\subsection{Menyiapkan Budget dan Jaringan AWS}
 
-Buat AWS budget untuk memantau biaya penggunaan. Setelah itu, buat VPC untuk proyek. VPC perlu memiliki subnet untuk gateway Guacamole dan routing melalui internet gateway. Instans Windows harus dapat dijangkau dari gateway Guacamole, tetapi tidak boleh membuka RDP langsung ke internet publik.
+Langkah awal adalah menyiapkan AWS Budget untuk memantau biaya selama eksperimen. Setelah itu, dibuat VPC untuk menempatkan Linux EC2 sebagai gateway dan Windows EC2 sebagai target aplikasi. VPC perlu memiliki subnet, route table, dan internet gateway agar Linux EC2 dapat diakses dari browser. Windows EC2 ditempatkan sebagai target privat yang hanya menerima koneksi RDP dari jalur internal atau dari gateway Guacamole.
 
-\subsection{Menjalankan Linux EC2 untuk Guacamole}
+Aturan jaringan yang digunakan pada prototipe dapat diringkas sebagai berikut:
 
-Jalankan instans Ubuntu Linux EC2. Pasang security group yang mengizinkan akses SSH administratif dari jaringan tepercaya dan akses browser ke port prototipe Guacamole. Pada konfigurasi produksi, port 8080 sebaiknya ditempatkan di belakang HTTPS menggunakan reverse proxy.
+\begin{itemize}
+    \item Linux EC2 membuka akses HTTP port 8080 untuk antarmuka Guacamole pada tahap prototipe.
+    \item Linux EC2 membuka SSH port 22 hanya untuk administrator atau jaringan tepercaya.
+    \item Windows EC2 membuka RDP port 3389 hanya dari gateway Guacamole atau jaringan internal VPC.
+    \item Windows EC2 tidak digunakan sebagai endpoint publik bagi pengguna akhir.
+\end{itemize}
 
-\subsection{Memasang Docker dan Docker Compose}
+\subsection{Menjalankan Linux EC2 sebagai Gateway}
 
-Pasang Docker dan Docker Compose pada instans Linux EC2. Urutan perintah dapat berbeda tergantung image sistem operasi, tetapi tujuannya adalah menyiapkan instans agar dapat menjalankan stack Docker Compose untuk Guacamole.
+Instans Linux EC2 digunakan sebagai tempat menjalankan Apache Guacamole dan service pendukungnya. Sistem operasi yang digunakan adalah Ubuntu. Setelah instans berjalan, administrator masuk melalui SSH menggunakan key pair yang sudah dibuat pada AWS.
 
-\subsection{Mendeploy Layanan Guacamole}
+\begin{lstlisting}[style=code]
+ssh -i <keypair.pem> ubuntu@<linux-ec2-public-ip>
+\end{lstlisting}
 
-Clone repository deployment dan jalankan layanan Docker Compose. Repository tersebut berisi konfigurasi untuk Guacamole, \texttt{guacd}, database, dan folder pendukung.
+Setelah berhasil masuk ke server, package index diperbarui dan dependensi dasar dipasang. Perintah yang digunakan dapat menyesuaikan versi sistem operasi, tetapi contoh berikut menggambarkan langkah yang digunakan pada lingkungan Ubuntu.
+
+\begin{lstlisting}[style=code]
+sudo apt update
+sudo apt install -y docker.io docker-compose-v2 git
+sudo systemctl enable docker
+sudo systemctl start docker
+sudo usermod -aG docker ubuntu
+\end{lstlisting}
+
+Setelah perintah tersebut dijalankan, sesi SSH dapat ditutup dan dibuka ulang agar perubahan grup Docker diterapkan pada user aktif.
+
+\subsection{Mendeploy Guacamole dengan Repository Deployment}
+
+Lapisan gateway dideploy menggunakan repository konfigurasi proyek. Repository ini berisi konfigurasi Docker Compose untuk menjalankan Apache Guacamole, \texttt{guacd}, dan database. Struktur minimal yang relevan pada repository deployment adalah sebagai berikut:
+
+\begin{lstlisting}[style=code]
+cloud-computing-final-project/
+|-- Dockerfile
+|-- docker-compose.yml
+|-- init/
+|-- data/
+|-- drive/
+`-- record/
+\end{lstlisting}
+
+Repository tersebut kemudian di-clone ke Linux EC2 dan dijalankan menggunakan Docker Compose.
 
 \begin{lstlisting}[style=code]
 git clone https://github.com/EarlyOcean/cloud-computing-final-project.git
@@ -339,27 +368,51 @@ mkdir -p init data drive record
 docker compose up -d
 \end{lstlisting}
 
-Setelah container berjalan, periksa status layanan menggunakan Docker Compose. Selanjutnya, buka antarmuka Guacamole dari browser menggunakan alamat publik Linux EC2 dan port web yang dikonfigurasi.
+Status container diperiksa untuk memastikan semua service sudah berjalan.
 
-\subsection{Menjalankan Windows EC2 untuk GAE}
+\begin{lstlisting}[style=code]
+docker compose ps
+docker compose logs --tail=50
+\end{lstlisting}
 
-Jalankan instans Windows Server EC2. Atur security group agar port RDP 3389 hanya dapat dijangkau dari gateway Guacamole atau VPC internal.
+Jika service berjalan normal, antarmuka Guacamole dapat dibuka melalui browser menggunakan format URL berikut:
 
-\subsection{Memasang GAE pada Windows EC2}
+\begin{lstlisting}[style=code]
+http://<linux-ec2-public-ip>:8080/guacamole/
+\end{lstlisting}
 
-Unduh artefak aplikasi Gamatutor/GAE dari repository resmi. Pasang atau salin berkas yang dibutuhkan ke instans Windows EC2. Pastikan TutorialGenerator dan PlayerAnimasi dapat dijalankan di lingkungan Windows tersebut.
+Pada tahap prototipe, port 8080 digunakan secara langsung. Untuk penggunaan produksi, akses ini sebaiknya ditempatkan di belakang reverse proxy dan HTTPS.
+
+\subsection{Menjalankan Windows EC2 untuk Aplikasi GAE}
+
+Instans Windows Server EC2 digunakan sebagai host aplikasi GAE. Setelah instans dibuat, password administrator Windows diambil melalui AWS Console menggunakan key pair yang sesuai. Security group Windows EC2 dikonfigurasi agar RDP port 3389 tidak terbuka untuk seluruh internet, tetapi hanya dapat diakses dari gateway Guacamole atau jalur internal VPC.
+
+Setelah desktop Windows dapat diakses, artefak aplikasi GAE diambil dari repository Gamatutor:
 
 \begin{lstlisting}[style=code]
 https://github.com/gamatutor/gamatutor
 \end{lstlisting}
 
-\subsection{Membuat Koneksi RDP pada Guacamole}
+File aplikasi kemudian dipindahkan atau diunduh ke Windows EC2. Komponen yang diverifikasi adalah aplikasi TutorialGenerator dan PlayerAnimasi. Pada tahap ini, GAE tetap berjalan sebagai aplikasi desktop Windows biasa; perbedaannya adalah lingkungan eksekusinya berada pada server cloud.
 
-Masuk ke Guacamole sebagai administrator dan buat koneksi RDP baru. Konfigurasikan koneksi tersebut agar mengarah ke instans Windows EC2. Setelah koneksi disimpan, buka koneksi dari dashboard Guacamole dan pastikan desktop Windows muncul di browser.
+\subsection{Membuat Koneksi RDP pada Apache Guacamole}
 
-\subsection{Menjalankan GAE Melalui Browser}
+Setelah Guacamole dapat diakses, koneksi RDP baru dibuat dari halaman administrasi Guacamole. Parameter yang perlu diisi meliputi nama koneksi, protokol RDP, alamat privat Windows EC2, port 3389, serta kredensial Windows yang digunakan untuk login. Format konfigurasi koneksi dapat diringkas sebagai berikut:
 
-Dari sesi Guacamole, jalankan aplikasi GAE pada desktop Windows EC2. Pengguna seharusnya dapat menggunakan GAE tanpa memasangnya secara lokal. Langkah ini memverifikasi tujuan utama proyek, yaitu akses berbasis browser lintas sistem operasi untuk aplikasi desktop native Windows.
+\begin{lstlisting}[style=code]
+Connection name : GAE Windows EC2
+Protocol        : RDP
+Hostname        : <windows-ec2-private-ip>
+Port            : 3389
+Username        : <windows-username>
+Password        : <windows-password>
+\end{lstlisting}
+
+Setelah koneksi disimpan, pengguna memilih koneksi tersebut dari dashboard Guacamole. Jika konfigurasi berhasil, desktop Windows EC2 akan muncul langsung di browser. Dari sesi tersebut, pengguna dapat membuka TutorialGenerator atau PlayerAnimasi tanpa memasang GAE pada perangkat lokal.
+
+\subsection{Validasi Akhir}
+
+Validasi akhir dilakukan dengan memeriksa tiga hal. Pertama, pengguna dapat membuka halaman Guacamole melalui browser. Kedua, Guacamole berhasil membuat sesi RDP ke Windows EC2. Ketiga, GAE dapat dijalankan dari desktop Windows EC2 dan tetap dapat digunakan melalui sesi browser. Dengan validasi ini, tujuan utama proyek terpenuhi: aplikasi desktop Windows dapat digunakan secara lintas sistem operasi melalui browser tanpa instalasi lokal.
 
 \section{Repository Source Code dan Deployment}
 
