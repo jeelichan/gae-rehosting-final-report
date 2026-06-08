@@ -96,29 +96,22 @@ Arsitektur sistem ditempatkan di dalam AWS VPC. Secara umum, arsitektur terdiri 
 
 \begin{figure*}[t]
 \centering
-\resizebox{0.96\textwidth}{!}{%
+\resizebox{0.88\textwidth}{!}{%
 \begin{tikzpicture}[
   font=\scriptsize,
-  card/.style={draw, rounded corners, align=center, minimum height=0.9cm, text width=2.55cm, inner sep=5pt},
-  note/.style={align=center, font=\scriptsize},
-  arrow/.style={-{Latex[length=2mm]}, thick},
-  dashedarrow/.style={-{Latex[length=2mm]}, thick, dashed}
+  box/.style={draw, rounded corners, align=left, minimum height=2.15cm, text width=3.75cm, inner sep=7pt},
+  arrow/.style={-{Latex[length=2.2mm]}, thick}
 ]
-\node[note] at (6.9,1.25) {AWS VPC: Linux EC2 sebagai gateway publik; Windows EC2 sebagai target privat};
+\node[box] (client) at (0,0) {\textbf{Lapisan Klien}\\Pengguna membuka GAE melalui web browser.\\Tidak ada instalasi GAE di perangkat lokal.};
 
-\node[card] (browser) at (0,0) {Pengguna\\Web Browser\\Tanpa Instalasi Lokal};
-\node[card] (guac) at (3.4,0) {Apache Guacamole\\Linux EC2 + Docker\\HTML5 Gateway\\HTTP :8080};
-\node[card] (guacd) at (6.8,0) {\texttt{guacd}\\Protocol Daemon\\RDP Translator};
-\node[card] (win) at (10.2,0) {Windows EC2\\Private IP\\RDP 3389\\Tidak public-facing};
-\node[card] (gae) at (13.6,0) {Aplikasi GAE\\TutorialGenerator\\PlayerAnimasi};
-\node[card] (mysql) at (5.1,-1.75) {MySQL/MariaDB\\Auth Database\\User + Konfigurasi};
+\node[box] (gateway) at (5.2,0) {\textbf{Gateway: Linux EC2}\\Public endpoint: HTTP :8080.\\Docker Engine menjalankan Apache Guacamole, \texttt{guacd}, dan MySQL/MariaDB untuk autentikasi serta konfigurasi koneksi.};
 
-\draw[arrow] (browser.east) -- node[above]{HTTP/HTML5} (guac.west);
-\draw[arrow] (guac.east) -- node[above]{internal} (guacd.west);
-\draw[arrow] (guacd.east) -- node[above]{RDP 3389} (win.west);
-\draw[arrow] (win.east) -- (gae.west);
-\draw[dashedarrow] (guac.south) |- node[pos=0.25, right]{auth/config} (mysql.west);
-\draw[dashedarrow] (mysql.east) -| (guacd.south);
+\node[box] (target) at (10.4,0) {\textbf{Target: Windows EC2}\\Private IP, tidak dibuka langsung ke internet publik.\\Menerima RDP 3389 dari gateway dan menjalankan GAE.};
+
+\draw[arrow] (client.east) -- node[above, align=center]{HTTP/HTML5\\port 8080} (gateway.west);
+\draw[arrow] (gateway.east) -- node[above, align=center]{RDP 3389\\internal VPC} (target.west);
+
+\node[align=center, font=\scriptsize] at (5.2,-1.85) {AWS VPC membatasi komunikasi antara gateway publik dan target privat.};
 \end{tikzpicture}%
 }
 \caption{Arsitektur rehosting cloud untuk akses GAE berbasis browser.}
