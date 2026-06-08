@@ -96,22 +96,22 @@ Arsitektur sistem ditempatkan di dalam AWS VPC. Secara umum, arsitektur terdiri 
 
 \begin{figure*}[t]
 \centering
-\resizebox{0.98\textwidth}{!}{%
+\resizebox{0.96\textwidth}{!}{%
 \begin{tikzpicture}[
   font=\scriptsize,
-  card/.style={draw, rounded corners, align=center, minimum height=0.85cm, text width=2.45cm, inner sep=5pt},
-  smallcard/.style={draw, rounded corners, align=center, minimum height=0.75cm, text width=2.25cm, inner sep=4pt},
-  group/.style={draw, dashed, rounded corners, inner sep=9pt},
+  card/.style={draw, rounded corners, align=center, minimum height=0.9cm, text width=2.55cm, inner sep=5pt},
+  note/.style={align=center, font=\scriptsize},
   arrow/.style={-{Latex[length=2mm]}, thick},
   dashedarrow/.style={-{Latex[length=2mm]}, thick, dashed}
 ]
+\node[note] at (6.9,1.25) {AWS VPC: Linux EC2 sebagai gateway publik; Windows EC2 sebagai target privat};
+
 \node[card] (browser) at (0,0) {Pengguna\\Web Browser\\Tanpa Instalasi Lokal};
-\node[smallcard] (public) at (0,-1.35) {Akses Publik\\HTTP :8080};
-\node[card] (guac) at (3.9,0) {Guacamole\\Web Gateway\\HTML5 UI\\port 8080};
-\node[card] (guacd) at (7.2,0) {\texttt{guacd}\\Protocol Daemon\\RDP Translator};
-\node[card] (mysql) at (5.55,-1.9) {MySQL/MariaDB\\Database Auth\\User + Konfigurasi};
-\node[card] (win) at (10.7,0) {Windows Server\\RDP 3389\\Private IP\\Tidak Public-facing};
-\node[card] (gae) at (14.0,0) {Aplikasi GAE\\TutorialGenerator\\PlayerAnimasi};
+\node[card] (guac) at (3.4,0) {Apache Guacamole\\Linux EC2 + Docker\\HTML5 Gateway\\HTTP :8080};
+\node[card] (guacd) at (6.8,0) {\texttt{guacd}\\Protocol Daemon\\RDP Translator};
+\node[card] (win) at (10.2,0) {Windows EC2\\Private IP\\RDP 3389\\Tidak public-facing};
+\node[card] (gae) at (13.6,0) {Aplikasi GAE\\TutorialGenerator\\PlayerAnimasi};
+\node[card] (mysql) at (5.1,-1.75) {MySQL/MariaDB\\Auth Database\\User + Konfigurasi};
 
 \draw[arrow] (browser.east) -- node[above]{HTTP/HTML5} (guac.west);
 \draw[arrow] (guac.east) -- node[above]{internal} (guacd.west);
@@ -119,18 +119,13 @@ Arsitektur sistem ditempatkan di dalam AWS VPC. Secara umum, arsitektur terdiri 
 \draw[arrow] (win.east) -- (gae.west);
 \draw[dashedarrow] (guac.south) |- node[pos=0.25, right]{auth/config} (mysql.west);
 \draw[dashedarrow] (mysql.east) -| (guacd.south);
-
-\node[group, fit=(browser)(public), label=above:{Lapisan Klien}] {};
-\node[group, fit=(guac)(guacd)(mysql), label=above:{Lapisan Gateway --- Linux EC2 (Ubuntu) + Docker Engine}] {};
-\node[group, fit=(win)(gae), label=above:{Lapisan Target --- Windows EC2}] {};
-\node[group, fit=(browser)(public)(guac)(guacd)(mysql)(win)(gae), label=above left:{AWS VPC}] {};
 \end{tikzpicture}%
 }
 \caption{Arsitektur rehosting cloud untuk akses GAE berbasis browser.}
 \label{fig:architecture}
 \end{figure*}
 
-Gambar~\ref{fig:architecture} menunjukkan alur akses akhir. Pengguna mengakses Guacamole dari browser melalui endpoint publik pada Linux EC2. Guacamole berjalan pada lapisan gateway bersama \texttt{guacd} dan MySQL/MariaDB di dalam deployment berbasis Docker. Guacamole menggunakan database untuk menyimpan akun pengguna dan konfigurasi koneksi, sedangkan \texttt{guacd} menerjemahkan sesi browser menjadi koneksi RDP. Instans Windows EC2 tetap berada pada lapisan target dan diakses melalui port RDP 3389 dari jalur internal VPC, bukan langsung dari internet publik.
+Gambar~\ref{fig:architecture} menunjukkan alur akses akhir dalam bentuk yang diringkas agar tetap terbaca pada format IEEE. Pengguna mengakses Apache Guacamole dari browser melalui endpoint publik pada Linux EC2. Pada instans Linux tersebut, Guacamole, \texttt{guacd}, dan MySQL/MariaDB berjalan sebagai bagian dari deployment berbasis Docker. Guacamole menggunakan database untuk menyimpan akun pengguna dan konfigurasi koneksi, sedangkan \texttt{guacd} menerjemahkan sesi browser menjadi koneksi RDP. Instans Windows EC2 tetap berada pada lapisan target, menggunakan alamat privat, dan diakses melalui port RDP 3389 dari jalur internal VPC, bukan langsung dari internet publik. Dengan demikian, detail VPC, Docker Engine, akses publik Guacamole, database autentikasi, dan target Windows privat tetap tercakup tanpa membuat diagram terlalu padat.
 
 \subsection{Komponen Infrastruktur}
 
