@@ -96,22 +96,26 @@ Arsitektur sistem ditempatkan di dalam AWS VPC. Secara umum, arsitektur terdiri 
 
 \begin{figure*}[t]
 \centering
-\resizebox{0.88\textwidth}{!}{%
+\resizebox{0.96\textwidth}{!}{%
 \begin{tikzpicture}[
   font=\scriptsize,
-  box/.style={draw, rounded corners, align=left, minimum height=2.15cm, text width=3.75cm, inner sep=7pt},
-  arrow/.style={-{Latex[length=2.2mm]}, thick}
+  box/.style={draw, rounded corners, align=center, minimum height=1.1cm, text width=2.45cm, inner sep=5pt},
+  note/.style={draw, rounded corners, align=left, text width=5.7cm, inner sep=5pt},
+  arrow/.style={-{Latex[length=2mm]}, thick}
 ]
-\node[box] (client) at (0,0) {\textbf{Lapisan Klien}\\Pengguna membuka GAE melalui web browser.\\Tidak ada instalasi GAE di perangkat lokal.};
+\node[box] (client) at (0,0) {\textbf{Klien}\\Web browser\\tanpa instalasi lokal};
+\node[box] (guac) at (3.6,0) {\textbf{Apache Guacamole}\\Linux EC2\\HTTP :8080};
+\node[box] (guacd) at (7.2,0) {\textbf{\texttt{guacd}}\\RDP bridge\\Docker service};
+\node[box] (win) at (10.8,0) {\textbf{Windows EC2}\\Private IP\\RDP 3389};
+\node[box] (gae) at (14.4,0) {\textbf{GAE}\\TutorialGenerator\\PlayerAnimasi};
 
-\node[box] (gateway) at (5.2,0) {\textbf{Gateway: Linux EC2}\\Public endpoint: HTTP :8080.\\Docker Engine menjalankan Apache Guacamole, \texttt{guacd}, dan MySQL/MariaDB untuk autentikasi serta konfigurasi koneksi.};
+\draw[arrow] (client.east) -- node[above, fill=white, inner sep=1pt]{HTTP/HTML5} (guac.west);
+\draw[arrow] (guac.east) -- node[above, fill=white, inner sep=1pt]{internal} (guacd.west);
+\draw[arrow] (guacd.east) -- node[above, fill=white, inner sep=1pt]{RDP 3389} (win.west);
+\draw[arrow] (win.east) -- (gae.west);
 
-\node[box] (target) at (10.4,0) {\textbf{Target: Windows EC2}\\Private IP, tidak dibuka langsung ke internet publik.\\Menerima RDP 3389 dari gateway dan menjalankan GAE.};
-
-\draw[arrow] (client.east) -- node[above, align=center]{HTTP/HTML5\\port 8080} (gateway.west);
-\draw[arrow] (gateway.east) -- node[above, align=center]{RDP 3389\\internal VPC} (target.west);
-
-\node[align=center, font=\scriptsize] at (5.2,-1.85) {AWS VPC membatasi komunikasi antara gateway publik dan target privat.};
+\node[note] at (3.6,-1.75) {\textbf{Gateway service:} Docker pada Linux EC2 menjalankan Guacamole, \texttt{guacd}, dan MySQL/MariaDB untuk autentikasi serta konfigurasi koneksi.};
+\node[note] at (10.8,-1.75) {\textbf{Network rule:} Windows EC2 tidak dibuka langsung ke internet publik dan hanya menerima RDP melalui jalur internal VPC.};
 \end{tikzpicture}%
 }
 \caption{Arsitektur rehosting cloud untuk akses GAE berbasis browser.}
