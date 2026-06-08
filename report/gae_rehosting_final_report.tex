@@ -88,42 +88,56 @@ Other approaches were considered less suitable for this project scope. A complet
 
 \subsection{Target Architecture}
 
-The architecture has three layers: client, gateway, and application host. The client layer is the user's device and web browser. The gateway layer is a Linux EC2 instance running Apache Guacamole and its supporting services. The application host is a Windows EC2 instance where GAE is installed and executed.
+The architecture is deployed inside an AWS VPC. It consists of a client layer, a gateway layer, and a target layer. The client layer is the user's device and web browser. The gateway layer is a Linux EC2 instance that exposes Apache Guacamole through HTTP port 8080 during the prototype stage and SSH port 22 for administration. Inside this Linux instance, Docker runs Guacamole, \texttt{guacd}, and MySQL/MariaDB services. The target layer is a Windows EC2 instance that hosts the GAE desktop application and accepts RDP traffic only from the internal VPC path through the Guacamole gateway.
 
 \begin{figure*}[t]
 \centering
-\resizebox{0.96\textwidth}{!}{%
+\resizebox{0.98\textwidth}{!}{%
 \begin{tikzpicture}[
   font=\scriptsize,
-  box/.style={draw, rounded corners, align=center, minimum height=1.0cm, text width=2.65cm, inner sep=5pt},
-  arrow/.style={-{Latex[length=2mm]}, thick}
+  card/.style={draw, rounded corners, align=center, minimum height=0.85cm, text width=2.45cm, inner sep=5pt},
+  smallcard/.style={draw, rounded corners, align=center, minimum height=0.75cm, text width=2.25cm, inner sep=4pt},
+  group/.style={draw, dashed, rounded corners, inner sep=9pt},
+  arrow/.style={-{Latex[length=2mm]}, thick},
+  dashedarrow/.style={-{Latex[length=2mm]}, thick, dashed}
 ]
-\node[box] (user) at (0,0) {User Device\\Web Browser\\No Local Install};
-\node[box] (guac) at (3.6,0) {Apache Guacamole\\HTML5 Web Gateway\\Linux EC2};
-\node[box] (guacd) at (7.2,0) {\texttt{guacd}\\Protocol Daemon\\RDP Bridge};
-\node[box] (win) at (10.8,0) {Windows EC2\\GAE Installed\\Desktop Session};
-\node[box] (gae) at (14.4,0) {GAE Application\\TutorialGenerator\\PlayerAnimasi};
-\node[box] (db) at (3.6,-1.9) {MariaDB/MySQL\\Users + Config};
+% Client layer
+\node[card] (browser) at (0,0) {User\\Web Browser\\No Local Install};
+\node[smallcard] (public) at (0,-1.35) {Public Access\\HTTP :8080};
 
-\node[align=center] at (5.4,1.15) {Gateway Layer --- Linux EC2};
-\node[align=center] at (12.6,1.15) {Application Layer --- Windows EC2};
+% Gateway layer / Docker engine
+\node[card] (guac) at (3.9,0) {Guacamole\\Web Gateway\\HTML5 UI\\port 8080};
+\node[card] (guacd) at (7.2,0) {\texttt{guacd}\\Protocol Daemon\\RDP Translator};
+\node[card] (mysql) at (5.55,-1.9) {MySQL/MariaDB\\Auth Database\\Users + Config};
 
-\draw[arrow] (user.east) -- node[above]{HTTP/HTML5} (guac.west);
-\draw[arrow] (guac.east) -- node[above]{Guacamole protocol} (guacd.west);
+% Target layer
+\node[card] (win) at (10.7,0) {Windows Server\\RDP 3389\\Private IP\\Not Internet-facing};
+\node[card] (gae) at (14.0,0) {GAE Application\\TutorialGenerator\\PlayerAnimasi};
+
+% Main and supporting flows
+\draw[arrow] (browser.east) -- node[above]{HTTP/HTML5} (guac.west);
+\draw[arrow] (guac.east) -- node[above]{internal} (guacd.west);
 \draw[arrow] (guacd.east) -- node[above]{RDP 3389} (win.west);
 \draw[arrow] (win.east) -- (gae.west);
-\draw[arrow, dashed] (guac.south) -- node[right]{auth/config} (db.north);
+\draw[dashedarrow] (guac.south) |- node[pos=0.25, right]{auth/config} (mysql.west);
+\draw[dashedarrow] (mysql.east) -| (guacd.south);
+
+% Layer boundaries
+\node[group, fit=(browser)(public), label=above:{Client Layer}] {};
+\node[group, fit=(guac)(guacd)(mysql), label=above:{Gateway Layer --- Linux EC2 (Ubuntu) + Docker Engine}] {};
+\node[group, fit=(win)(gae), label=above:{Target Layer --- Windows EC2}] {};
+\node[group, fit=(browser)(public)(guac)(guacd)(mysql)(win)(gae), label=above left:{AWS VPC}] {};
 \end{tikzpicture}%
 }
 \caption{Cloud rehosting architecture for browser-based access to GAE.}
 \label{fig:architecture}
 \end{figure*}
 
-Figure~\ref{fig:architecture} illustrates the final access flow. The browser does not execute GAE directly. It renders an HTML5 remote desktop session provided by Guacamole. Guacamole communicates with \texttt{guacd}, and \texttt{guacd} connects to the Windows EC2 instance using RDP. From the user's perspective, the application is opened through a browser, while the actual execution remains inside the Windows environment.
+Figure~\ref{fig:architecture} illustrates the final access flow. The user accesses Guacamole from a browser through the Linux EC2 public endpoint. Guacamole runs in the gateway layer together with \texttt{guacd} and MySQL/MariaDB inside the Docker-based deployment. Guacamole uses the database for user and connection configuration, while \texttt{guacd} translates the browser session into an RDP connection. The Windows EC2 instance remains in the target layer and is accessed through RDP port 3389 from the internal VPC path, not directly from the public internet.
 
 \subsection{Infrastructure Components}
 
-Table~\ref{tab:components} summarizes the infrastructure components. The design separates the public access point from the Windows application host. This separation is important because the Windows EC2 instance does not need to expose RDP directly to all public internet users.
+Table~\ref{tab:components} summarizes the infrastructure components. The design separates the browser-facing gateway from the Windows application host. This separation allows Guacamole to become the public access point, while the Windows EC2 instance remains protected from direct public RDP exposure.
 
 \begin{table}[!t]
 \centering
@@ -134,12 +148,13 @@ Table~\ref{tab:components} summarizes the infrastructure components. The design 
 \textbf{Component} & \textbf{Role} \\
 \midrule
 User browser & Provides cross-platform access without installing GAE locally. \\
-Linux EC2 & Hosts the Guacamole web gateway and supporting services. \\
-Apache Guacamole & Presents the remote desktop session through an HTML5 interface. \\
-\texttt{guacd} & Translates Guacamole sessions into remote desktop protocol connections. \\
-MariaDB/MySQL & Stores Guacamole accounts, connection settings, and configuration. \\
-Windows EC2 & Runs the Windows desktop environment and the GAE application. \\
-RDP & Connects the Guacamole gateway to the Windows application host. \\
+AWS VPC & Provides the network boundary for the gateway and target instances. \\
+Linux EC2 & Hosts Docker Engine and exposes Guacamole through the prototype web port. \\
+Apache Guacamole & Provides the HTML5 remote desktop gateway for browser access. \\
+\texttt{guacd} & Runs as the protocol daemon that translates Guacamole sessions to RDP. \\
+MySQL/MariaDB & Stores Guacamole user accounts, connection settings, and configuration. \\
+Windows EC2 & Runs the private Windows desktop environment where GAE is installed. \\
+RDP & Connects \texttt{guacd} to the Windows EC2 instance through port 3389. \\
 \bottomrule
 \end{tabularx}
 \end{table}
