@@ -95,26 +95,24 @@ The architecture has three layers: client, gateway, and application host. The cl
 \resizebox{0.96\textwidth}{!}{%
 \begin{tikzpicture}[
   font=\scriptsize,
-  box/.style={draw, rounded corners, align=center, minimum height=0.9cm, text width=2.55cm, inner sep=5pt},
-  widebox/.style={draw, rounded corners, align=center, minimum height=0.95cm, text width=3.05cm, inner sep=5pt},
-  layer/.style={draw, dashed, rounded corners, inner sep=10pt},
+  box/.style={draw, rounded corners, align=center, minimum height=1.0cm, text width=2.65cm, inner sep=5pt},
   arrow/.style={-{Latex[length=2mm]}, thick}
 ]
-\node[box] (user) at (0,0.8) {User Device\\Web Browser\\No Local Install};
-\node[widebox] (guac) at (4.0,0.8) {Apache Guacamole\\Web Gateway\\Port 8080};
-\node[box] (guacd) at (4.0,-0.95) {\texttt{guacd}\\Protocol Daemon\\RDP Translator};
-\node[box] (db) at (4.0,-2.65) {MariaDB/MySQL\\Users + Config};
-\node[widebox] (win) at (8.8,-0.95) {Windows EC2\\GAE Installed\\RDP Endpoint};
-\node[widebox] (gae) at (12.8,-0.95) {GAE Application\\TutorialGenerator\\PlayerAnimasi};
+\node[box] (user) at (0,0) {User Device\\Web Browser\\No Local Install};
+\node[box] (guac) at (3.6,0) {Apache Guacamole\\HTML5 Web Gateway\\Linux EC2};
+\node[box] (guacd) at (7.2,0) {\texttt{guacd}\\Protocol Daemon\\RDP Bridge};
+\node[box] (win) at (10.8,0) {Windows EC2\\GAE Installed\\Desktop Session};
+\node[box] (gae) at (14.4,0) {GAE Application\\TutorialGenerator\\PlayerAnimasi};
+\node[box] (db) at (3.6,-1.9) {MariaDB/MySQL\\Users + Config};
 
-\draw[arrow] (user.east) -- node[above, pos=0.42]{HTTP/HTML5} (guac.west);
-\draw[arrow] (guac.south) -- (guacd.north);
-\draw[arrow] (guacd.south) -- node[right, xshift=1mm]{config} (db.north);
+\node[align=center] at (5.4,1.15) {Gateway Layer --- Linux EC2};
+\node[align=center] at (12.6,1.15) {Application Layer --- Windows EC2};
+
+\draw[arrow] (user.east) -- node[above]{HTTP/HTML5} (guac.west);
+\draw[arrow] (guac.east) -- node[above]{Guacamole protocol} (guacd.west);
 \draw[arrow] (guacd.east) -- node[above]{RDP 3389} (win.west);
 \draw[arrow] (win.east) -- (gae.west);
-
-\node[layer, fit=(guac)(guacd)(db), label={[yshift=2pt]above:{Gateway Layer --- Linux EC2}}] {};
-\node[layer, fit=(win)(gae), label={[yshift=2pt]above:{Application Layer --- Windows EC2}}] {};
+\draw[arrow, dashed] (guac.south) -- node[right]{auth/config} (db.north);
 \end{tikzpicture}%
 }
 \caption{Cloud rehosting architecture for browser-based access to GAE.}
