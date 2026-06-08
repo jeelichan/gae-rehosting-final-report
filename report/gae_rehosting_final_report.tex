@@ -20,7 +20,11 @@
 \raggedbottom
 \setlength{\emergencystretch}{3em}
 \renewcommand{\arraystretch}{1.12}
-\hyphenation{Guaca-mole Gama-tutor Tutorial-Generator Player-Animasi cross-platform browser-based}
+\renewcommand{\abstractname}{Abstrak}
+\renewcommand{\IEEEkeywordsname}{Kata Kunci}
+\renewcommand{\refname}{Referensi}
+\renewcommand{\appendixname}{Lampiran}
+\hyphenation{Guaca-mole Gama-tutor Tutorial-Generator Player-Animasi lintas-platform browser-based}
 
 \lstdefinestyle{code}{
   basicstyle=\scriptsize\ttfamily,
@@ -42,53 +46,53 @@
 
 \begin{document}
 
-\title{Browser-Based Rehosting of GAMA Animation Engine for Cross-Platform Access}
+\title{Rehosting Berbasis Browser untuk Akses Lintas Sistem Operasi pada GAMA Animation Engine}
 
 \author{
 \IEEEauthorblockN{Axelle Chandra, Muhammad Dafa 'Izzul Iman A., Muhammad Dhiwaul Akbar,\\
 Dhimas Early Oceandy, Hammam Muhammad Yazid}
-\IEEEauthorblockA{Department of Computer Science and Electronics\\
-Faculty of Mathematics and Natural Sciences, Universitas Gadjah Mada\\
+\IEEEauthorblockA{Departemen Ilmu Komputer dan Elektronika\\
+Fakultas Matematika dan Ilmu Pengetahuan Alam, Universitas Gadjah Mada\\
 Yogyakarta, Indonesia}
 }
 
 \maketitle
 
 \begin{abstract}
-GAMA Animation Engine (GAE), a component of the Gamatutor project, is a native Windows desktop application for creating and playing tutorial animations. Although the application remains useful, its Windows-native form limits accessibility because users normally need a compatible Windows device and a local installation. This project addresses that limitation through cloud rehosting. The implemented system runs GAE on a Windows EC2 instance and provides browser-based access through Apache Guacamole deployed on a Linux EC2 instance. Users interact with GAE from a web browser, while Guacamole forwards the session to the Windows server using Remote Desktop Protocol (RDP). The result shows that GAE can be accessed across operating systems without installing the application on each local device and without significantly modifying the original application. The project demonstrates that rehosting is a practical approach when the main requirement is cross-platform, browser-only access rather than a full cloud-native redesign.
+GAMA Animation Engine (GAE), salah satu komponen dari proyek Gamatutor, merupakan aplikasi desktop native Windows yang digunakan untuk membuat dan menjalankan animasi tutorial sederhana. Aplikasi ini masih relevan untuk digunakan, tetapi bentuknya sebagai aplikasi Windows membatasi akses pengguna karena umumnya membutuhkan perangkat Windows dan instalasi lokal. Proyek ini menangani keterbatasan tersebut melalui pendekatan \textit{cloud rehosting}. Implementasi dilakukan dengan menjalankan GAE pada sebuah instans Windows EC2, lalu menyediakan akses berbasis browser melalui Apache Guacamole yang dipasang pada instans Linux EC2. Pengguna berinteraksi dengan GAE dari web browser, sedangkan Guacamole meneruskan sesi tersebut ke server Windows menggunakan Remote Desktop Protocol (RDP). Hasil implementasi menunjukkan bahwa GAE dapat diakses dari berbagai sistem operasi tanpa instalasi aplikasi di perangkat pengguna dan tanpa perubahan signifikan pada aplikasi asli. Dengan demikian, rehosting menjadi pendekatan yang cukup praktis ketika kebutuhan utama proyek adalah akses lintas sistem operasi, penggunaan melalui browser, dan kemudahan distribusi, bukan perancangan ulang aplikasi menjadi sepenuhnya \textit{cloud-native}.
 \end{abstract}
 
 \begin{IEEEkeywords}
-cloud computing, rehosting, legacy application, Apache Guacamole, AWS EC2, Remote Desktop Protocol, cross-platform access, GAMA Animation Engine
+komputasi awan, rehosting, aplikasi legacy, Apache Guacamole, AWS EC2, Remote Desktop Protocol, akses lintas sistem operasi, GAMA Animation Engine
 \end{IEEEkeywords}
 
-\section{Introduction}
+\section{Pendahuluan}
 
-Many applications that remain useful in academic or institutional settings were not designed for today's multi-device environment. Some were built as native desktop applications and are therefore tied to a particular operating system. GAMA Animation Engine (GAE), part of the Gamatutor project, is one such case. The application provides desktop tools such as TutorialGenerator and PlayerAnimasi for creating and running tutorial animation content.
+Banyak aplikasi yang masih berguna di lingkungan akademik maupun institusi tidak dirancang untuk pola penggunaan lintas perangkat seperti saat ini. Sebagian aplikasi tersebut dibuat sebagai aplikasi desktop native sehingga sangat bergantung pada sistem operasi tertentu. GAMA Animation Engine (GAE), bagian dari proyek Gamatutor, merupakan salah satu contohnya. Aplikasi ini menyediakan perangkat desktop seperti TutorialGenerator dan PlayerAnimasi untuk membuat serta menjalankan konten animasi tutorial.
 
-The main issue addressed in this project is accessibility. In its original deployment model, GAE is most practical when the user has a compatible Windows environment and can prepare the application locally. This creates friction for users on macOS, Linux, Chromebook, or other devices that cannot run Windows desktop applications directly. It also makes distribution less efficient because the same setup process must be repeated on multiple user devices.
+Permasalahan utama dalam proyek ini adalah aksesibilitas. Pada model penggunaan awal, GAE paling mudah digunakan ketika pengguna memiliki lingkungan Windows yang sesuai dan dapat menyiapkan aplikasi secara lokal. Kondisi tersebut menyulitkan pengguna yang memakai macOS, Linux, Chromebook, atau perangkat lain yang tidak dapat menjalankan aplikasi desktop Windows secara langsung. Selain itu, distribusi aplikasi menjadi kurang praktis karena proses instalasi dan penyiapan harus diulang pada setiap perangkat pengguna.
 
-To address this issue, the project keeps GAE as a Windows desktop application but moves its execution environment to the cloud. The user no longer needs to install the application locally. Instead, the user opens a browser and accesses a remote Windows session where GAE is already installed. The design is therefore built around four goals: cross-platform access, browser-only usage, minimal local setup, and preservation of the original application behavior.
+Untuk menjawab masalah tersebut, proyek ini tetap mempertahankan GAE sebagai aplikasi desktop Windows, tetapi memindahkan lingkungan eksekusinya ke cloud. Pengguna tidak lagi perlu memasang aplikasi di perangkat lokal. Pengguna cukup membuka browser dan mengakses sesi Windows jarak jauh yang sudah memiliki GAE di dalamnya. Rancangan ini berfokus pada empat tujuan: akses lintas sistem operasi, penggunaan melalui browser, minim instalasi di sisi pengguna, dan tetap menjaga perilaku aplikasi asli.
 
-The final implementation uses Apache Guacamole as a browser-based remote desktop gateway and Amazon Elastic Compute Cloud (EC2) as the infrastructure platform. A Linux EC2 instance hosts the Guacamole gateway, while a Windows EC2 instance runs GAE. This report presents the design, implementation, testing result, limitations, and required appendices for the final cloud computing project deliverable.
+Implementasi akhir menggunakan Apache Guacamole sebagai gerbang akses desktop jarak jauh berbasis browser dan Amazon Elastic Compute Cloud (EC2) sebagai infrastruktur cloud. Sebuah instans Linux EC2 menjalankan Guacamole sebagai gateway, sedangkan instans Windows EC2 menjalankan aplikasi GAE. Laporan ini membahas rancangan sistem, proses implementasi, hasil pengujian, keterbatasan, serta lampiran yang diperlukan untuk memenuhi ketentuan laporan akhir proyek cloud computing.
 
-\section{Methods}
+\section{Metode}
 
-\subsection{Application and Problem Analysis}
+\subsection{Analisis Aplikasi dan Permasalahan}
 
-GAE was analyzed as a Windows-native desktop application. Based on the project proposal and application characteristics, GAE is built using Delphi/Object Pascal with the Visual Component Library (VCL), runs as a standalone Windows application, and uses local assets such as animation files, images, and audio. These characteristics make the application dependent on a Windows desktop environment.
+GAE dianalisis sebagai aplikasi desktop native Windows. Berdasarkan proposal proyek dan karakteristik aplikasinya, GAE dibuat menggunakan Delphi/Object Pascal dengan Visual Component Library (VCL), berjalan sebagai aplikasi Windows mandiri, dan menggunakan aset lokal seperti berkas animasi, gambar, serta audio. Karakteristik tersebut membuat aplikasi bergantung pada lingkungan desktop Windows.
 
-The access problem is straightforward: users need the correct operating system and local setup before they can use the application. For a classroom or shared-use scenario, this is inconvenient because every user device must be prepared separately. The project therefore requires a deployment model that keeps the Windows runtime available while presenting the application through an interface that is common across devices. A web browser was selected as that interface.
+Masalah aksesnya dapat dirumuskan secara sederhana: pengguna membutuhkan sistem operasi dan konfigurasi lokal yang sesuai sebelum dapat memakai aplikasi. Dalam konteks kelas atau penggunaan bersama, hal ini kurang efisien karena setiap perangkat harus disiapkan satu per satu. Oleh karena itu, proyek membutuhkan model deployment yang tetap menyediakan runtime Windows, tetapi menyajikan aksesnya melalui antarmuka yang umum tersedia di berbagai perangkat. Browser dipilih sebagai antarmuka utama karena hampir semua sistem operasi modern memilikinya.
 
-\subsection{Migration Strategy}
+\subsection{Strategi Migrasi}
 
-The selected strategy is rehosting, often called lift-and-shift. Rehosting moves the application execution environment to cloud infrastructure with minimal changes to the application itself. This strategy is appropriate because the project is not trying to rebuild GAE as a web application. The intended outcome is to make the existing application easier to access.
+Strategi yang dipilih adalah rehosting, atau sering disebut \textit{lift-and-shift}. Rehosting memindahkan lingkungan eksekusi aplikasi ke infrastruktur cloud dengan perubahan seminimal mungkin pada aplikasi itu sendiri. Strategi ini sesuai karena proyek tidak bertujuan membangun ulang GAE menjadi aplikasi web. Tujuan utamanya adalah membuat aplikasi yang sudah ada menjadi lebih mudah diakses.
 
-Other approaches were considered less suitable for this project scope. A complete web rewrite would require redesigning the user interface, runtime model, and file handling behavior. A cloud-native redesign would also require a larger engineering effort and could change how the application behaves. Rehosting is more realistic because it preserves the Windows desktop environment while improving access through a cloud-based gateway.
+Pendekatan lain dinilai kurang sesuai dengan ruang lingkup proyek. Menulis ulang GAE sebagai aplikasi web akan membutuhkan perubahan pada antarmuka, model eksekusi, dan cara aplikasi menangani berkas lokal. Perancangan ulang menjadi aplikasi \textit{cloud-native} juga akan membutuhkan usaha pengembangan yang lebih besar dan berpotensi mengubah perilaku aplikasi asli. Rehosting lebih realistis karena tetap menjaga lingkungan desktop Windows, tetapi menambahkan lapisan akses cloud berbasis browser.
 
-\subsection{Target Architecture}
+\subsection{Arsitektur Target}
 
-The architecture is deployed inside an AWS VPC. It consists of a client layer, a gateway layer, and a target layer. The client layer is the user's device and web browser. The gateway layer is a Linux EC2 instance that exposes Apache Guacamole through HTTP port 8080 during the prototype stage and SSH port 22 for administration. Inside this Linux instance, Docker runs Guacamole, \texttt{guacd}, and MySQL/MariaDB services. The target layer is a Windows EC2 instance that hosts the GAE desktop application and accepts RDP traffic only from the internal VPC path through the Guacamole gateway.
+Arsitektur sistem ditempatkan di dalam AWS VPC. Secara umum, arsitektur terdiri dari tiga lapisan: lapisan klien, lapisan gateway, dan lapisan target. Lapisan klien adalah perangkat pengguna dan web browser. Lapisan gateway berupa instans Linux EC2 yang membuka Apache Guacamole melalui HTTP port 8080 pada tahap prototipe dan SSH port 22 untuk administrasi. Di dalam instans Linux tersebut, Docker menjalankan layanan Guacamole, \texttt{guacd}, dan MySQL/MariaDB. Lapisan target berupa instans Windows EC2 yang menjalankan aplikasi desktop GAE dan menerima koneksi RDP hanya melalui jalur internal VPC dari gateway Guacamole.
 
 \begin{figure*}[t]
 \centering
@@ -101,20 +105,20 @@ The architecture is deployed inside an AWS VPC. It consists of a client layer, a
   arrow/.style={-{Latex[length=2mm]}, thick},
   dashedarrow/.style={-{Latex[length=2mm]}, thick, dashed}
 ]
-% Client layer
-\node[card] (browser) at (0,0) {User\\Web Browser\\No Local Install};
-\node[smallcard] (public) at (0,-1.35) {Public Access\\HTTP :8080};
+% Lapisan klien
+\node[card] (browser) at (0,0) {Pengguna\\Web Browser\\Tanpa Instalasi Lokal};
+\node[smallcard] (public) at (0,-1.35) {Akses Publik\\HTTP :8080};
 
-% Gateway layer / Docker engine
+% Lapisan gateway / Docker engine
 \node[card] (guac) at (3.9,0) {Guacamole\\Web Gateway\\HTML5 UI\\port 8080};
 \node[card] (guacd) at (7.2,0) {\texttt{guacd}\\Protocol Daemon\\RDP Translator};
-\node[card] (mysql) at (5.55,-1.9) {MySQL/MariaDB\\Auth Database\\Users + Config};
+\node[card] (mysql) at (5.55,-1.9) {MySQL/MariaDB\\Database Auth\\User + Konfigurasi};
 
-% Target layer
-\node[card] (win) at (10.7,0) {Windows Server\\RDP 3389\\Private IP\\Not Internet-facing};
-\node[card] (gae) at (14.0,0) {GAE Application\\TutorialGenerator\\PlayerAnimasi};
+% Lapisan target
+\node[card] (win) at (10.7,0) {Windows Server\\RDP 3389\\Private IP\\Tidak Public-facing};
+\node[card] (gae) at (14.0,0) {Aplikasi GAE\\TutorialGenerator\\PlayerAnimasi};
 
-% Main and supporting flows
+% Alur utama dan pendukung
 \draw[arrow] (browser.east) -- node[above]{HTTP/HTML5} (guac.west);
 \draw[arrow] (guac.east) -- node[above]{internal} (guacd.west);
 \draw[arrow] (guacd.east) -- node[above]{RDP 3389} (win.west);
@@ -122,148 +126,148 @@ The architecture is deployed inside an AWS VPC. It consists of a client layer, a
 \draw[dashedarrow] (guac.south) |- node[pos=0.25, right]{auth/config} (mysql.west);
 \draw[dashedarrow] (mysql.east) -| (guacd.south);
 
-% Layer boundaries
-\node[group, fit=(browser)(public), label=above:{Client Layer}] {};
-\node[group, fit=(guac)(guacd)(mysql), label=above:{Gateway Layer --- Linux EC2 (Ubuntu) + Docker Engine}] {};
-\node[group, fit=(win)(gae), label=above:{Target Layer --- Windows EC2}] {};
+% Batas lapisan
+\node[group, fit=(browser)(public), label=above:{Lapisan Klien}] {};
+\node[group, fit=(guac)(guacd)(mysql), label=above:{Lapisan Gateway --- Linux EC2 (Ubuntu) + Docker Engine}] {};
+\node[group, fit=(win)(gae), label=above:{Lapisan Target --- Windows EC2}] {};
 \node[group, fit=(browser)(public)(guac)(guacd)(mysql)(win)(gae), label=above left:{AWS VPC}] {};
 \end{tikzpicture}%
 }
-\caption{Cloud rehosting architecture for browser-based access to GAE.}
+\caption{Arsitektur rehosting cloud untuk akses GAE berbasis browser.}
 \label{fig:architecture}
 \end{figure*}
 
-Figure~\ref{fig:architecture} illustrates the final access flow. The user accesses Guacamole from a browser through the Linux EC2 public endpoint. Guacamole runs in the gateway layer together with \texttt{guacd} and MySQL/MariaDB inside the Docker-based deployment. Guacamole uses the database for user and connection configuration, while \texttt{guacd} translates the browser session into an RDP connection. The Windows EC2 instance remains in the target layer and is accessed through RDP port 3389 from the internal VPC path, not directly from the public internet.
+Gambar~\ref{fig:architecture} menunjukkan alur akses akhir. Pengguna mengakses Guacamole dari browser melalui endpoint publik pada Linux EC2. Guacamole berjalan pada lapisan gateway bersama \texttt{guacd} dan MySQL/MariaDB di dalam deployment berbasis Docker. Guacamole menggunakan database untuk menyimpan akun pengguna dan konfigurasi koneksi, sedangkan \texttt{guacd} menerjemahkan sesi browser menjadi koneksi RDP. Instans Windows EC2 tetap berada pada lapisan target dan diakses melalui port RDP 3389 dari jalur internal VPC, bukan langsung dari internet publik.
 
-\subsection{Infrastructure Components}
+\subsection{Komponen Infrastruktur}
 
-Table~\ref{tab:components} summarizes the infrastructure components. The design separates the browser-facing gateway from the Windows application host. This separation allows Guacamole to become the public access point, while the Windows EC2 instance remains protected from direct public RDP exposure.
+Tabel~\ref{tab:components} merangkum komponen utama infrastruktur. Rancangan ini memisahkan gateway yang menghadap pengguna dari host aplikasi Windows. Pemisahan tersebut membuat Guacamole berperan sebagai titik akses publik, sementara Windows EC2 tetap terlindungi dari paparan RDP langsung ke internet.
 
 \begin{table}[!t]
 \centering
-\caption{Infrastructure Components}
+\caption{Komponen Infrastruktur}
 \label{tab:components}
 \begin{tabularx}{\columnwidth}{p{2.2cm}X}
 \toprule
-\textbf{Component} & \textbf{Role} \\
+\textbf{Komponen} & \textbf{Peran} \\
 \midrule
-User browser & Provides cross-platform access without installing GAE locally. \\
-AWS VPC & Provides the network boundary for the gateway and target instances. \\
-Linux EC2 & Hosts Docker Engine and exposes Guacamole through the prototype web port. \\
-Apache Guacamole & Provides the HTML5 remote desktop gateway for browser access. \\
-\texttt{guacd} & Runs as the protocol daemon that translates Guacamole sessions to RDP. \\
-MySQL/MariaDB & Stores Guacamole user accounts, connection settings, and configuration. \\
-Windows EC2 & Runs the private Windows desktop environment where GAE is installed. \\
-RDP & Connects \texttt{guacd} to the Windows EC2 instance through port 3389. \\
+Browser pengguna & Menyediakan akses lintas sistem operasi tanpa instalasi GAE secara lokal. \\
+AWS VPC & Menjadi batas jaringan untuk instans gateway dan target. \\
+Linux EC2 & Menjalankan Docker Engine dan membuka akses Guacamole melalui port web prototipe. \\
+Apache Guacamole & Menyediakan gateway desktop jarak jauh berbasis HTML5 untuk akses melalui browser. \\
+\texttt{guacd} & Berperan sebagai protocol daemon yang menerjemahkan sesi Guacamole ke RDP. \\
+MySQL/MariaDB & Menyimpan akun pengguna Guacamole, konfigurasi koneksi, dan pengaturan terkait. \\
+Windows EC2 & Menjalankan lingkungan desktop Windows privat tempat GAE dipasang. \\
+RDP & Menghubungkan \texttt{guacd} dengan Windows EC2 melalui port 3389. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\subsection{Deployment Procedure}
+\subsection{Prosedur Deployment}
 
-The implementation was carried out in two stages. The first stage was a local proof of concept using a virtualized Windows environment. The second stage moved the architecture to AWS.
+Implementasi dilakukan dalam dua tahap. Tahap pertama adalah pembuktian konsep secara lokal menggunakan lingkungan Windows tervirtualisasi. Tahap kedua memindahkan arsitektur tersebut ke AWS.
 
-The cloud deployment procedure was as follows:
+Prosedur deployment cloud yang dilakukan adalah sebagai berikut:
 
 \begin{enumerate}
-    \item Configure AWS budget monitoring to reduce the risk of unexpected cost.
-    \item Create the required network components, including VPC, subnet, route table, and internet gateway.
-    \item Launch a Linux EC2 instance for Apache Guacamole.
-    \item Launch a Windows EC2 instance for the GAE application.
-    \item Configure security groups so that users access Guacamole through the browser, while RDP access to Windows is restricted to the internal network or the Guacamole gateway.
-    \item Install Docker and Docker Compose on the Linux EC2 instance.
-    \item Deploy Guacamole, \texttt{guacd}, and database services using the deployment repository.
-    \item Install or copy the GAE application artifact to the Windows EC2 instance.
-    \item Create an RDP connection entry in Guacamole that points to the Windows EC2 instance.
-    \item Test access from a browser and compare it with the local proof-of-concept environment.
+    \item Mengatur AWS budget monitoring untuk mengurangi risiko biaya tidak terduga.
+    \item Membuat komponen jaringan yang diperlukan, termasuk VPC, subnet, route table, dan internet gateway.
+    \item Menjalankan instans Linux EC2 untuk Apache Guacamole.
+    \item Menjalankan instans Windows EC2 untuk aplikasi GAE.
+    \item Mengatur security group agar pengguna mengakses Guacamole melalui browser, sementara akses RDP ke Windows dibatasi ke jaringan internal atau gateway Guacamole.
+    \item Memasang Docker dan Docker Compose pada instans Linux EC2.
+    \item Mendeploy Guacamole, \texttt{guacd}, dan layanan database menggunakan repository deployment.
+    \item Memasang atau menyalin artefak aplikasi GAE ke instans Windows EC2.
+    \item Membuat entri koneksi RDP pada Guacamole yang mengarah ke instans Windows EC2.
+    \item Menguji akses dari browser dan membandingkannya dengan pembuktian konsep lokal.
 \end{enumerate}
 
-\subsection{Repositories}
+\subsection{Repository}
 
-Two repositories were used. The original GAE/Gamatutor repository provides the application artifact and source materials for the application being rehosted \cite{gamatutor}. The project deployment repository contains Docker-based configuration for the Guacamole gateway layer \cite{deployment-repo}. This distinction is important because the project does not claim to rebuild GAE. The contribution of this project is the cloud rehosting environment that makes the existing application accessible through a browser.
+Proyek ini menggunakan dua repository. Repository GAE/Gamatutor asli menyediakan artefak aplikasi dan materi sumber dari aplikasi yang direhosting \cite{gamatutor}. Repository deployment proyek berisi konfigurasi berbasis Docker untuk lapisan gateway Guacamole \cite{deployment-repo}. Pemisahan ini penting karena proyek tidak mengklaim membangun ulang GAE. Kontribusi utama proyek adalah menyiapkan lingkungan rehosting cloud agar aplikasi yang sudah ada dapat diakses melalui browser.
 
-\section{Results}
+\section{Hasil}
 
-\subsection{Local Proof of Concept}
+\subsection{Pembuktian Konsep Lokal}
 
-The first milestone was a local proof of concept using VirtualBox. The team installed GAE inside a local Windows virtual machine and verified that the environment could be accessed through RDP. At that stage, Guacamole integration was not yet complete, and the reported progress was 40\%. This result confirmed that the application could run in a virtualized Windows environment and could be reached remotely.
+Milestone pertama adalah pembuktian konsep lokal menggunakan VirtualBox. Tim memasang GAE di dalam mesin virtual Windows lokal dan memverifikasi bahwa lingkungan tersebut dapat diakses melalui RDP. Pada tahap itu, integrasi Guacamole belum selesai dan progres dilaporkan sebesar 40\%. Hasil ini menunjukkan bahwa aplikasi dapat berjalan pada lingkungan Windows tervirtualisasi dan dapat dijangkau secara jarak jauh.
 
-\subsection{Cloud Rehosting Result}
+\subsection{Hasil Rehosting Cloud}
 
-The final deployment successfully rehosted GAE using the architecture in Fig.~\ref{fig:architecture}. Users access Guacamole from a browser. Guacamole then opens an RDP session to the Windows EC2 instance where GAE is installed. The team reported the final implementation as 100\% complete after the browser-based access flow was verified.
+Deployment akhir berhasil merehosting GAE menggunakan arsitektur pada Gambar~\ref{fig:architecture}. Pengguna mengakses Guacamole dari browser. Guacamole kemudian membuka sesi RDP ke instans Windows EC2 tempat GAE dipasang. Tim melaporkan implementasi akhir sebagai 100\% selesai setelah alur akses berbasis browser berhasil diverifikasi.
 
-The result satisfies the main accessibility goals. Users do not need to install GAE on their local devices. Users on different operating systems can access the same application environment through a browser. The Windows-specific runtime is centralized in the cloud, while the browser becomes the main user-facing interface.
+Hasil tersebut memenuhi tujuan aksesibilitas utama. Pengguna tidak perlu memasang GAE pada perangkat lokal. Pengguna dari sistem operasi berbeda dapat mengakses lingkungan aplikasi yang sama melalui browser. Kebutuhan runtime Windows dipusatkan di cloud, sementara browser menjadi antarmuka utama di sisi pengguna.
 
-\subsection{Functional Testing}
+\subsection{Pengujian Fungsional}
 
-Functional testing focused on access feasibility and basic operation. The goal was to confirm that the application could be reached and used through the rehosted environment rather than to measure detailed performance.
+Pengujian fungsional difokuskan pada kelayakan akses dan operasi dasar. Tujuannya adalah memastikan bahwa aplikasi dapat dijangkau dan digunakan melalui lingkungan rehosting, bukan melakukan pengukuran performa secara rinci.
 
 \begin{table}[!t]
 \centering
-\caption{Functional Testing Summary}
+\caption{Ringkasan Pengujian Fungsional}
 \label{tab:testing}
 \begin{tabularx}{\columnwidth}{p{0.45cm}X p{1.15cm}}
 \toprule
-\textbf{No.} & \textbf{Test Case} & \textbf{Status} \\
+\textbf{No.} & \textbf{Kasus Uji} & \textbf{Status} \\
 \midrule
-1 & Run GAE in a local Windows environment. & Passed \\
-2 & Access the virtualized Windows environment through RDP. & Passed \\
-3 & Deploy the Guacamole gateway on Linux EC2. & Passed \\
-4 & Connect Guacamole to Windows EC2 through RDP. & Passed \\
-5 & Access Windows EC2 from a browser through Guacamole. & Passed \\
-6 & Run GAE on the Windows EC2 instance. & Passed \\
-7 & Use browser-only access without installing GAE locally. & Passed \\
+1 & Menjalankan GAE pada lingkungan Windows lokal. & Lulus \\
+2 & Mengakses lingkungan Windows tervirtualisasi melalui RDP. & Lulus \\
+3 & Mendeploy gateway Guacamole pada Linux EC2. & Lulus \\
+4 & Menghubungkan Guacamole ke Windows EC2 melalui RDP. & Lulus \\
+5 & Mengakses Windows EC2 dari browser melalui Guacamole. & Lulus \\
+6 & Menjalankan GAE pada instans Windows EC2. & Lulus \\
+7 & Menggunakan GAE melalui browser tanpa instalasi lokal. & Lulus \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-Table~\ref{tab:testing} shows that the system passed the functional tests required for the project. The result should be interpreted as a feasibility result: the original Windows application can be made available through a browser-based cloud access layer.
+Tabel~\ref{tab:testing} menunjukkan bahwa sistem lulus pengujian fungsional utama yang dibutuhkan proyek. Hasil tersebut sebaiknya dibaca sebagai hasil kelayakan: aplikasi Windows yang sudah ada dapat disajikan kembali melalui lapisan akses cloud berbasis browser.
 
-\subsection{Deployment Configuration Result}
+\subsection{Hasil Konfigurasi Deployment}
 
-The deployment repository uses Docker Compose to define the Guacamole gateway environment. The main services are Guacamole, \texttt{guacd}, and a MariaDB/MySQL database. During the prototype stage, Guacamole was exposed through port 8080. The \texttt{guacd} service handled the protocol translation to RDP, while the database stored user and connection configuration.
+Repository deployment menggunakan Docker Compose untuk mendefinisikan lingkungan gateway Guacamole. Layanan utama yang digunakan adalah Guacamole, \texttt{guacd}, dan database MariaDB/MySQL. Pada tahap prototipe, Guacamole dibuka melalui port 8080. Layanan \texttt{guacd} menangani penerjemahan protokol menuju RDP, sedangkan database menyimpan konfigurasi pengguna dan koneksi.
 
-Docker Compose made the gateway setup more repeatable because the required services could be started together on the Linux EC2 instance. The prototype configuration also highlighted several security points that need improvement, especially the treatment of access values and configuration files.
+Docker Compose membuat proses penyiapan gateway lebih konsisten karena layanan yang dibutuhkan dapat dijalankan bersama pada instans Linux EC2. Namun, konfigurasi prototipe juga menunjukkan beberapa aspek keamanan yang perlu diperbaiki, terutama terkait pengelolaan nilai akses dan berkas konfigurasi.
 
-\subsection{Video Demonstrations}
+\subsection{Demonstrasi Video}
 
-Two videos are required as final attachments. The first video demonstrates GAE in the local or on-premise environment. The second video demonstrates GAE in the cloud environment through browser access using Apache Guacamole. The final video URLs should be inserted in Appendix~D before submission.
+Deliverable akhir mensyaratkan dua video demonstrasi. Video pertama menunjukkan GAE pada lingkungan lokal atau on-premise. Video kedua menunjukkan GAE pada lingkungan cloud melalui akses browser menggunakan Apache Guacamole. URL video akhir perlu dimasukkan pada Lampiran~D sebelum pengumpulan.
 
-\section{Discussion}
+\section{Diskusi}
 
-\subsection{Accessibility Improvement}
+\subsection{Peningkatan Aksesibilitas}
 
-The strongest contribution of the project is not a new application feature, but a more accessible delivery model. In the original model, the user must prepare a Windows environment. In the rehosted model, the user only needs a browser. This changes the user requirement from installing a Windows desktop application into opening a browser and connecting to a hosted session.
+Kontribusi utama proyek ini bukan penambahan fitur baru pada aplikasi, melainkan model akses yang lebih mudah. Pada model awal, pengguna harus menyiapkan lingkungan Windows. Pada model rehosting, pengguna cukup menggunakan browser. Dengan demikian, kebutuhan pengguna berubah dari memasang aplikasi desktop Windows menjadi membuka browser dan masuk ke sesi yang sudah disediakan.
 
-This is useful for cross-platform scenarios. A user on Windows, macOS, Linux, or another browser-capable device can access the same GAE environment. It also simplifies maintenance because the application can be prepared once on the Windows EC2 instance rather than repeatedly installed on many local machines.
+Pendekatan ini berguna untuk skenario lintas sistem operasi. Pengguna Windows, macOS, Linux, atau perangkat lain yang memiliki browser modern dapat mengakses lingkungan GAE yang sama. Dari sisi pemeliharaan, aplikasi juga cukup disiapkan pada instans Windows EC2, bukan dipasang berulang pada banyak perangkat lokal.
 
-\subsection{Why Rehosting is Suitable}
+\subsection{Kesesuaian Strategi Rehosting}
 
-Rehosting fits the project scope because the goal is accessibility, not application redevelopment. Keeping GAE inside a Windows environment preserves the original behavior. Placing Guacamole in front of that environment makes the application reachable from a browser. The combination directly solves the project problem with a manageable amount of infrastructure work.
+Rehosting sesuai dengan ruang lingkup proyek karena masalah yang diselesaikan adalah aksesibilitas, bukan pengembangan ulang aplikasi. Menjaga GAE tetap berjalan di lingkungan Windows mempertahankan perilaku aplikasi asli. Menempatkan Guacamole di depan lingkungan tersebut membuat aplikasi dapat dijangkau melalui browser. Kombinasi ini menyelesaikan masalah proyek dengan kebutuhan infrastruktur yang masih terukur.
 
-A full cloud-native redesign would require a different project scope. It would involve rewriting the interface for the web, redesigning local file handling, and building a new application architecture. Those changes may be valuable in the future, but they are not necessary to validate browser-based access for the current project.
+Perancangan ulang menjadi aplikasi \textit{cloud-native} akan membutuhkan ruang lingkup yang berbeda. Perubahan tersebut mencakup penulisan ulang antarmuka web, perancangan ulang mekanisme penyimpanan berkas, dan pembuatan arsitektur aplikasi baru. Pengembangan tersebut mungkin bernilai untuk jangka panjang, tetapi tidak diperlukan untuk membuktikan akses berbasis browser pada proyek ini.
 
-\subsection{Security Considerations}
+\subsection{Pertimbangan Keamanan}
 
-Remote desktop access must be configured carefully. The Windows EC2 instance should not expose RDP directly to the public internet. RDP should be limited to the Guacamole gateway or private network rules. The Guacamole interface should also use HTTPS in a production environment, and administrative access should be limited to trusted users.
+Akses desktop jarak jauh harus dikonfigurasi dengan hati-hati. Instans Windows EC2 tidak seharusnya membuka RDP langsung ke internet publik. Akses RDP perlu dibatasi hanya dari gateway Guacamole atau aturan jaringan privat. Antarmuka Guacamole juga sebaiknya menggunakan HTTPS pada lingkungan produksi, dan akses administratif perlu dibatasi hanya untuk pengguna yang berwenang.
 
-The prototype configuration still contains classroom-level shortcuts. These should be improved before any production use. A stronger deployment should use separated environment configuration, restricted network rules, and non-default Guacamole accounts.
+Konfigurasi prototipe masih memiliki sejumlah penyederhanaan yang wajar untuk konteks kelas, tetapi belum layak dipakai langsung sebagai konfigurasi produksi. Deployment yang lebih kuat perlu menggunakan konfigurasi terpisah, aturan jaringan yang lebih ketat, serta akun Guacamole non-default.
 
-\subsection{Operational Limitations}
+\subsection{Keterbatasan Operasional}
 
-The solution remains dependent on a Windows EC2 instance. This means it has the operational characteristics of a remote desktop environment rather than a lightweight web application. Cost, instance uptime, Windows licensing, session stability, and network quality all affect the user experience.
+Solusi ini masih bergantung pada instans Windows EC2. Artinya, sistem memiliki karakteristik operasional seperti lingkungan desktop jarak jauh, bukan aplikasi web ringan. Biaya, waktu aktif instans, lisensi Windows, stabilitas sesi, dan kualitas jaringan akan memengaruhi pengalaman pengguna.
 
-The project also focuses on feasibility instead of detailed performance evaluation. No formal latency benchmark, bandwidth benchmark, or concurrent-user stress test was performed. Future work should include those measurements, especially if the system will be used by multiple users at the same time.
+Proyek ini juga berfokus pada kelayakan akses, bukan evaluasi performa mendalam. Belum ada pengukuran formal terhadap latensi, bandwidth, maupun pengujian banyak pengguna secara bersamaan. Pengujian tersebut perlu dilakukan jika sistem akan digunakan oleh banyak pengguna dalam kondisi yang lebih realistis.
 
-\subsection{Future Improvements}
+\subsection{Pengembangan Lanjutan}
 
-Several improvements can make the system more production-ready. HTTPS should be configured using a domain and TLS certificate. Authentication should use unique accounts and stronger access policies. RDP access should be restricted using private networking and security group references. Backup should be prepared for animation files and Guacamole configuration. Cost can also be reduced by stopping instances when they are not used or by scheduling runtime based on class activity.
+Beberapa perbaikan dapat membuat sistem lebih siap untuk digunakan di luar prototipe. HTTPS sebaiknya dikonfigurasi menggunakan domain dan sertifikat TLS. Autentikasi perlu menggunakan akun unik dan kebijakan akses yang lebih kuat. Akses RDP sebaiknya dibatasi menggunakan jaringan privat dan referensi security group. Cadangan juga perlu disiapkan untuk berkas animasi dan konfigurasi Guacamole. Selain itu, biaya cloud dapat ditekan dengan menghentikan instans saat tidak digunakan atau menjadwalkan waktu aktif berdasarkan kebutuhan kelas.
 
-\section{Conclusion}
+\section{Kesimpulan}
 
-This project successfully improved access to GAE by rehosting the Windows-native application in a cloud environment. The implementation uses a Linux EC2 instance running Apache Guacamole as the browser-based gateway and a Windows EC2 instance as the application host. With this architecture, users can access GAE from different operating systems without installing the application locally.
+Proyek ini berhasil meningkatkan akses terhadap GAE dengan merehosting aplikasi native Windows tersebut ke lingkungan cloud. Implementasi menggunakan instans Linux EC2 yang menjalankan Apache Guacamole sebagai gateway berbasis browser dan instans Windows EC2 sebagai host aplikasi. Melalui arsitektur ini, pengguna dapat mengakses GAE dari berbagai sistem operasi tanpa memasang aplikasi secara lokal.
 
-The result shows that rehosting is a practical strategy when the main objective is to make an existing desktop application easier to reach. The system does not convert GAE into a cloud-native application, but it achieves the intended outcome: cross-platform, browser-based, no-install access while preserving the original Windows application behavior.
+Hasil proyek menunjukkan bahwa rehosting merupakan strategi yang praktis ketika tujuan utama adalah membuat aplikasi desktop yang sudah ada menjadi lebih mudah dijangkau. Sistem ini tidak mengubah GAE menjadi aplikasi \textit{cloud-native}, tetapi berhasil memenuhi tujuan proyek: akses lintas sistem operasi, berbasis browser, tanpa instalasi lokal, dan tetap mempertahankan perilaku asli aplikasi Windows.
 
 \begin{thebibliography}{00}
 
@@ -300,48 +304,48 @@ Microsoft, ``Remote Desktop Services,'' Microsoft Learn. [Online]. Available: \u
 \onecolumn
 \appendices
 
-\section{Weekly Progress Submitted to Simaster}
+\section{Progress Mingguan yang Dikirim ke SIMASTER}
 
-Table~\ref{tab:weekly} summarizes the weekly progress based on the project plan and submitted progress reports.
+Tabel~\ref{tab:weekly} merangkum progress mingguan berdasarkan rencana proyek dan laporan progress yang sudah dikumpulkan.
 
 \begin{table}[!h]
 \centering
-\caption{Weekly Progress Summary}
+\caption{Ringkasan Progress Mingguan}
 \label{tab:weekly}
 \begin{tabularx}{\textwidth}{p{0.8cm}p{3.5cm}X}
 \toprule
-\textbf{Week} & \textbf{Main Activity} & \textbf{Output} \\
+\textbf{Minggu} & \textbf{Aktivitas Utama} & \textbf{Output} \\
 \midrule
-1 & Problem identification and application analysis & Identified GAE as a Windows-native desktop application with accessibility limitations and local installation dependency. \\
-2 & Migration strategy selection & Selected rehosting/lift-and-shift as the most suitable approach for preserving the original application while improving access. \\
-3 & Initial cloud architecture design & Designed an architecture using a browser gateway layer and a Windows application host. \\
-4 & Local proof of concept & Created a local VM using VirtualBox, installed the application, and accessed it through RDP. Guacamole integration was still in progress. \\
-5 & AWS setup and EC2 provisioning & Prepared AWS budget, VPC, Linux EC2, and Windows EC2 instances for cloud implementation. \\
-6 & Guacamole deployment and integration & Deployed Apache Guacamole, \texttt{guacd}, and database services on Linux EC2 and connected them to Windows EC2. \\
-7 & Final testing, documentation, and demonstration & Verified browser-based access to GAE through Guacamole and prepared final report, appendix, and video demonstrations. \\
+1 & Identifikasi masalah dan analisis aplikasi & Menetapkan GAE sebagai aplikasi desktop native Windows dengan keterbatasan aksesibilitas dan ketergantungan pada instalasi lokal. \\
+2 & Pemilihan strategi migrasi & Memilih rehosting/lift-and-shift sebagai pendekatan yang paling sesuai untuk mempertahankan aplikasi asli sambil meningkatkan akses. \\
+3 & Perancangan awal arsitektur cloud & Merancang arsitektur dengan lapisan gateway berbasis browser dan host aplikasi Windows. \\
+4 & Pembuktian konsep lokal & Membuat VM lokal menggunakan VirtualBox, memasang aplikasi, dan mengaksesnya melalui RDP. Integrasi Guacamole masih dalam proses. \\
+5 & Penyiapan AWS dan provisioning EC2 & Menyiapkan AWS budget, VPC, Linux EC2, dan Windows EC2 untuk implementasi cloud. \\
+6 & Deployment dan integrasi Guacamole & Mendeploy Apache Guacamole, \texttt{guacd}, dan layanan database pada Linux EC2, lalu menghubungkannya ke Windows EC2. \\
+7 & Pengujian akhir, dokumentasi, dan demonstrasi & Memverifikasi akses GAE berbasis browser melalui Guacamole serta menyiapkan laporan akhir, lampiran, dan video demonstrasi. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\section{Step-by-Step Documentation}
+\section{Dokumentasi Langkah-Langkah Deployment}
 
-This appendix describes the rehosting procedure used in the project. Deployment-specific values such as instance identifiers and IP addresses should be adjusted according to the active environment.
+Lampiran ini menjelaskan prosedur rehosting yang digunakan dalam proyek. Nilai yang spesifik pada deployment, seperti instance identifier dan alamat IP, perlu disesuaikan dengan lingkungan aktif.
 
-\subsection{Prepare AWS Budget and Network}
+\subsection{Menyiapkan AWS Budget dan Jaringan}
 
-Create an AWS budget to monitor usage cost. Then create a VPC for the project. The VPC should contain a subnet for the Guacamole gateway and routing through an internet gateway. The Windows instance should be reachable from the Guacamole gateway but should not expose RDP directly to the public internet.
+Buat AWS budget untuk memantau biaya penggunaan. Setelah itu, buat VPC untuk proyek. VPC perlu memiliki subnet untuk gateway Guacamole dan routing melalui internet gateway. Instans Windows harus dapat dijangkau dari gateway Guacamole, tetapi tidak boleh membuka RDP langsung ke internet publik.
 
-\subsection{Launch Linux EC2 for Guacamole}
+\subsection{Menjalankan Linux EC2 untuk Guacamole}
 
-Launch an Ubuntu Linux EC2 instance. Attach a security group that allows administrative SSH access from a trusted network and allows browser access to the Guacamole prototype port. In production, port 8080 should be placed behind HTTPS using a reverse proxy.
+Jalankan instans Ubuntu Linux EC2. Pasang security group yang mengizinkan akses SSH administratif dari jaringan tepercaya dan akses browser ke port prototipe Guacamole. Pada konfigurasi produksi, port 8080 sebaiknya ditempatkan di belakang HTTPS menggunakan reverse proxy.
 
-\subsection{Install Docker and Docker Compose}
+\subsection{Memasang Docker dan Docker Compose}
 
-Install Docker and Docker Compose on the Linux EC2 instance. The exact command sequence may vary depending on the operating system image, but the goal is to prepare the instance so it can run the Guacamole Docker Compose stack.
+Pasang Docker dan Docker Compose pada instans Linux EC2. Urutan perintah dapat berbeda tergantung image sistem operasi, tetapi tujuannya adalah menyiapkan instans agar dapat menjalankan stack Docker Compose untuk Guacamole.
 
-\subsection{Deploy Guacamole Services}
+\subsection{Mendeploy Layanan Guacamole}
 
-Clone the deployment repository and start the Docker Compose services. The repository contains the configuration for Guacamole, \texttt{guacd}, database, and supporting folders.
+Clone repository deployment dan jalankan layanan Docker Compose. Repository tersebut berisi konfigurasi untuk Guacamole, \texttt{guacd}, database, dan folder pendukung.
 
 \begin{lstlisting}[style=code]
 git clone https://github.com/EarlyOcean/cloud-computing-final-project.git
@@ -350,71 +354,71 @@ mkdir -p init data drive record
 docker compose up -d
 \end{lstlisting}
 
-After the containers are running, verify the service status using Docker Compose. Then open the Guacamole interface from a browser using the Linux EC2 public address and the configured web port.
+Setelah container berjalan, periksa status layanan menggunakan Docker Compose. Selanjutnya, buka antarmuka Guacamole dari browser menggunakan alamat publik Linux EC2 dan port web yang dikonfigurasi.
 
-\subsection{Launch Windows EC2 for GAE}
+\subsection{Menjalankan Windows EC2 untuk GAE}
 
-Launch a Windows Server EC2 instance. Configure its security group so that RDP port 3389 is reachable only from the Guacamole gateway or the internal VPC.
+Jalankan instans Windows Server EC2. Atur security group agar port RDP 3389 hanya dapat dijangkau dari gateway Guacamole atau VPC internal.
 
-\subsection{Install GAE on Windows EC2}
+\subsection{Memasang GAE pada Windows EC2}
 
-Download the original Gamatutor/GAE application artifact from the official repository. Install or copy the required files to the Windows EC2 instance. Verify that TutorialGenerator and PlayerAnimasi can be executed in the Windows environment.
+Unduh artefak aplikasi Gamatutor/GAE dari repository resmi. Pasang atau salin berkas yang dibutuhkan ke instans Windows EC2. Pastikan TutorialGenerator dan PlayerAnimasi dapat dijalankan di lingkungan Windows tersebut.
 
 \begin{lstlisting}[style=code]
 https://github.com/gamatutor/gamatutor
 \end{lstlisting}
 
-\subsection{Create Guacamole RDP Connection}
+\subsection{Membuat Koneksi RDP pada Guacamole}
 
-Log in to Guacamole as an administrator and create a new RDP connection. Configure the connection to point to the Windows EC2 instance. After saving the connection, open it from the Guacamole dashboard and verify that the Windows desktop appears in the browser.
+Masuk ke Guacamole sebagai administrator dan buat koneksi RDP baru. Konfigurasikan koneksi tersebut agar mengarah ke instans Windows EC2. Setelah koneksi disimpan, buka koneksi dari dashboard Guacamole dan pastikan desktop Windows muncul di browser.
 
-\subsection{Run GAE Through Browser}
+\subsection{Menjalankan GAE Melalui Browser}
 
-From the Guacamole session, run the GAE application on the Windows EC2 desktop. The user should be able to interact with GAE without installing it locally. This verifies the main project goal: cross-platform browser-based access to a native Windows desktop application.
+Dari sesi Guacamole, jalankan aplikasi GAE pada desktop Windows EC2. Pengguna seharusnya dapat menggunakan GAE tanpa memasangnya secara lokal. Langkah ini memverifikasi tujuan utama proyek, yaitu akses berbasis browser lintas sistem operasi untuk aplikasi desktop native Windows.
 
-\section{Source Code and Deployment Repositories}
+\section{Repository Source Code dan Deployment}
 
-The project uses two repositories:
-
-\begin{itemize}
-    \item Original GAE/Gamatutor application repository: \url{https://github.com/gamatutor/gamatutor}
-    \item Deployment configuration repository: \url{https://github.com/EarlyOcean/cloud-computing-final-project}
-\end{itemize}
-
-The original repository contains the GAE application artifact. The deployment repository contains Docker-related configuration for the remote access gateway. The original GAE source code was not significantly modified. The project focuses on rehosting the existing Windows desktop application and making it accessible through cloud infrastructure.
-
-\section{Video Demonstration Attachments}
-
-Two video demonstrations are included as final attachments:
+Proyek ini menggunakan dua repository:
 
 \begin{itemize}
-    \item Video 1 --- Local/on-premise demonstration: shows GAE running in a local Windows environment or local VM before cloud rehosting.
-    \item Video 2 --- Cloud server demonstration: shows GAE accessed through a web browser using Apache Guacamole connected to the Windows EC2 instance.
+    \item Repository aplikasi GAE/Gamatutor asli: \url{https://github.com/gamatutor/gamatutor}
+    \item Repository konfigurasi deployment: \url{https://github.com/EarlyOcean/cloud-computing-final-project}
 \end{itemize}
 
-If the videos are submitted through a link-based platform, insert the final video URLs below before submission:
+Repository asli berisi artefak aplikasi GAE. Repository deployment berisi konfigurasi Docker untuk gateway akses jarak jauh. Source code GAE asli tidak dimodifikasi secara signifikan. Fokus proyek ini adalah merehosting aplikasi desktop Windows yang sudah ada dan membuatnya dapat diakses melalui infrastruktur cloud.
+
+\section{Lampiran Video Demonstrasi}
+
+Dua video demonstrasi disertakan sebagai lampiran akhir:
 
 \begin{itemize}
-    \item Video 1 URL: \textit{to be inserted by the authors}
-    \item Video 2 URL: \textit{to be inserted by the authors}
+    \item Video 1 --- Demonstrasi lokal/on-premise: menunjukkan GAE berjalan pada lingkungan Windows lokal atau VM lokal sebelum rehosting ke cloud.
+    \item Video 2 --- Demonstrasi server cloud: menunjukkan GAE diakses melalui web browser menggunakan Apache Guacamole yang terhubung ke instans Windows EC2.
 \end{itemize}
 
-\section{AI Declaration}
+Jika video dikumpulkan melalui platform berbasis tautan, URL akhir video perlu dimasukkan di bawah ini sebelum pengumpulan:
 
-The authors used AI assistance while preparing the final deliverables. The AI product used was ChatGPT by OpenAI. The assistance was limited to report planning, wording refinement, LaTeX structuring, appendix organization, and preparation of the AI declaration. The technical implementation, deployment process, testing, video demonstration, and final submission decisions were carried out and reviewed by the authors.
+\begin{itemize}
+    \item URL Video 1: \textit{diisi oleh penulis}
+    \item URL Video 2: \textit{diisi oleh penulis}
+\end{itemize}
 
-The following prompt log has been consolidated for readability while preserving the substance of the requests used during report preparation:
+\section{Deklarasi Penggunaan AI}
+
+Penulis menggunakan bantuan AI dalam penyusunan deliverable akhir. Produk AI yang digunakan adalah ChatGPT dari OpenAI. Bantuan AI digunakan untuk menyusun alur laporan, memperbaiki redaksi akademik, menata struktur LaTeX, merapikan lampiran, dan menyiapkan bagian deklarasi penggunaan AI. Implementasi teknis, proses deployment, pengujian, demonstrasi video, serta keputusan akhir pengumpulan tetap dilakukan dan ditinjau oleh penulis.
+
+Daftar prompt berikut telah diringkas dan dirapikan agar mudah dibaca, tanpa mengubah substansi permintaan yang digunakan selama penyusunan laporan:
 
 \begin{enumerate}
-    \item ``Suggest a workflow for preparing a cloud computing final report in IEEE format using the IMRAD structure.''
-    \item ``Explain how to write an IEEE report manually in LaTeX and provide a basic IEEE LaTeX structure.''
-    \item ``Create an initial report outline for a cloud computing final project about rehosting GAE/Gamatutor, including abstract, introduction, methods, results, discussion, conclusion, references, appendix, and AI declaration.''
-    \item ``Revise the project narrative so the main focus is improving accessibility for a native Windows desktop application, enabling cross-platform use, browser-only access, and no local installation.''
-    \item ``Integrate the original Gamatutor application repository and the deployment configuration repository into the report as separate sources.''
-    \item ``Draft an IEEE-style final report for the GAE rehosting project using Apache Guacamole, Linux EC2, Windows EC2, RDP, Docker Compose, and browser-based access.''
-    \item ``Improve the report layout, make the appendix more readable, and prepare a professional AI declaration section.''
+    \item ``Sarankan alur kerja untuk menyusun laporan akhir cloud computing dalam format IEEE dengan struktur IMRAD.''
+    \item ``Jelaskan cara menulis laporan IEEE secara manual menggunakan LaTeX dan berikan struktur dasar LaTeX IEEE.''
+    \item ``Buat rancangan awal laporan akhir proyek cloud computing tentang rehosting GAE/Gamatutor, termasuk abstrak, pendahuluan, metode, hasil, diskusi, kesimpulan, referensi, lampiran, dan deklarasi AI.''
+    \item ``Revisi narasi proyek agar fokus utamanya adalah peningkatan aksesibilitas aplikasi desktop native Windows, akses lintas sistem operasi, penggunaan berbasis browser, dan tanpa instalasi lokal.''
+    \item ``Integrasikan repository aplikasi Gamatutor asli dan repository konfigurasi deployment ke dalam laporan sebagai dua sumber yang berbeda.''
+    \item ``Susun draft laporan IEEE untuk proyek rehosting GAE menggunakan Apache Guacamole, Linux EC2, Windows EC2, RDP, Docker Compose, dan akses berbasis browser.''
+    \item ``Rapikan tata letak laporan, buat lampiran lebih mudah dibaca, dan siapkan bagian deklarasi penggunaan AI yang profesional.''
 \end{enumerate}
 
-All AI-assisted text was reviewed and edited by the authors to match the actual project scope, implementation details, and final deliverable requirements.
+Seluruh teks yang dibantu oleh AI telah ditinjau dan disesuaikan oleh penulis agar sesuai dengan ruang lingkup proyek, detail implementasi, dan ketentuan deliverable akhir.
 
 \end{document}
